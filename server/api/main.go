@@ -63,6 +63,9 @@ func main() {
 	// Intialise hub
 	app.hub.Init()
 
+	// Run hun channels
+	go app.hub.Run()
+
 	r:= app.mount()
 
 	log.Printf("Server running on port %v", port)

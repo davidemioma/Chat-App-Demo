@@ -1,10 +1,6 @@
 package socket
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"server/utils"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -52,75 +48,46 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case cl := <-h.Register:
+			// Check if room exists
+			if _, exists := h.Rooms[cl.RoomID]; exists {
+		        r := h.Rooms[cl.RoomID]
+
+				// Check if client exists, if no add client to room.
+				if _, exists := r.Clients[cl.ID]; !exists {
+					r.Clients[cl.ID] = cl
+				}
+	        }
 
 		case cl := <-h.Unregister:
+			// Check if room exists
+			if _, exists := h.Rooms[cl.RoomID]; exists {
+				// Check if client is in the room
+				if _, exists := h.Rooms[cl.RoomID].Clients[cl.ID]; exists {
+					// Check if no client is in a room 
+					if len(h.Rooms[cl.RoomID].Clients) != 0 {
+						h.Broadcast <- &Message{
+							Content:  "user left the chat",
+							RoomID:   cl.RoomID,
+							Username: cl.Username,
+						}
+					}
 
-	    case m := <-h.Broadcast:		
+					// Delete client
+					delete(h.Rooms[cl.RoomID].Clients, cl.ID)
+
+					// Close message channel of client
+					close(cl.Message)
+				}	
+			}	
+
+	    case m := <-h.Broadcast:	
+			// Check if room exists
+			if _, exists := h.Rooms[m.RoomID]; exists {
+				// Send message to all client
+				for _, cl := range h.Rooms[m.RoomID].Clients {
+					cl.Message <- m
+				}
+			}
 		}
 	}
-}
-
-var ws = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// origin := r.Header.Get("Origin")
-
-		// For production
-		// return origin == "Your frontend url"
-
-		return true
-	},
-}
-
-func (h *Hub) CreateRoom(ctx context.Context, args utils.CreateRoomReq) error {
-	h.Mutex.Lock()
-
-	defer h.Mutex.Unlock()
-
-	if _, exists := h.Rooms[args.ID]; exists {
-		return fmt.Errorf("room with ID %s already exists", args.ID)
-	}
-
-	h.Rooms[args.ID] = &Room{
-		ID: args.ID,
-		Name: args.Name,
-		Clients: make(map[string]*Client),
-	}
-
-	return nil
-}
-
-func (h *Hub) JoinRoom(w http.ResponseWriter, r *http.Request, arg utils.JoinRoomReq) error {
-	h.Mutex.Lock()
-
-	defer h.Mutex.Unlock()
-	
-	conn, wsErr := ws.Upgrade(w, r, nil)
-
-	if wsErr != nil {
-		return fmt.Errorf("Web socket upgrade error:", wsErr)
-    }
-
-	cl := &Client{
-		Conn: conn,
-		ID: arg.UserID,
-		RoomID: arg.RoomID,
-		Username: arg.Username,
-		Message: make(chan *Message, 10),
-	}
-
-	msg := &Message{
-		Content:  "A new user has joined the room",
-		RoomID:   arg.RoomID,
-		Username: arg.Username,
-	}
-
-	// Register a client through register channel
-
-	// Broadcast the message
-
-	// Write Message
-
-	// Read Message
 }

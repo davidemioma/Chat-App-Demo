@@ -64,8 +64,14 @@ func (app *application) mount() http.Handler {
 			r.Get("/sign-out", app.logoutHandler)
 		})
 
-		r.Route("/room", func(r chi.Router) {
+		r.Route("/rooms", func(r chi.Router) {
+			r.Get("/", app.getRoomHandler)
+
 			r.Post("/create", app.createRoomHandler)
+
+			r.Post("/{roomId}/join", app.joinRoomHandler)
+
+			r.Get("/{roomId}/clients", app.getClientsHandler)
 		})
 	})
 

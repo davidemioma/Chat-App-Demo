@@ -33,3 +33,13 @@ type JoinRoomReq struct {
 	UserID   string  `json:"userId"`
 	Username string  `json:"username"`
 }
+
+type GetRoomRes struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type GetClientRes struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+}
