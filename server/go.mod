@@ -16,3 +16,5 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	golang.org/x/crypto v0.32.0
 )
+
+require github.com/gorilla/websocket v1.5.3

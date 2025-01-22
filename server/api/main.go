@@ -60,6 +60,9 @@ func main() {
 		logger: logger,
 	}
 
+	// Intialise hub
+	app.hub.Init()
+
 	r:= app.mount()
 
 	log.Printf("Server running on port %v", port)

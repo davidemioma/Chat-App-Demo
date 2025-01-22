@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"server/internal/database"
+	"server/internal/socket"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -21,6 +22,7 @@ type config struct {
 type application struct {
 	config  config
 	logger  *log.Logger
+	hub     socket.Hub
 }
 
 // Handle Routes
@@ -60,6 +62,10 @@ func (app *application) mount() http.Handler {
 			r.Post("/sign-in", app.loginHandler)
 
 			r.Get("/sign-out", app.logoutHandler)
+		})
+
+		r.Route("/room", func(r chi.Router) {
+			r.Post("/create", app.createRoomHandler)
 		})
 	})
 

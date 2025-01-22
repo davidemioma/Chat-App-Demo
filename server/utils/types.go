@@ -22,3 +22,14 @@ type MyJWTClaims struct {
     UpdatedAt      time.Time `json:"updatedAt"`
 	jwt.RegisteredClaims
 }
+
+type CreateRoomReq struct {
+	ID   string  `json:"id"`
+	Name string  `json:"name"`
+}
+
+type JoinRoomReq struct {
+	RoomID   string  `json:"roomId"`
+	UserID   string  `json:"userId"`
+	Username string  `json:"username"`
+}
