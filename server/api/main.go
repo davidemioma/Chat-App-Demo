@@ -19,10 +19,18 @@ import (
 func main() {
 	godotenv.Load(".env")
 
+	// Port
 	port := os.Getenv("PORT")
 
 	if port == ""{
 	    log.Fatal("PORT not found")
+	}
+
+	// JWT_Secret
+	jwt_secret := os.Getenv("JWT_SECRET")
+
+	if jwt_secret == ""{
+	    log.Fatal("JWT secret not found")
 	}
 
 	// Postgres DB
@@ -44,6 +52,7 @@ func main() {
 	cfg := config{
 		db: db,
 		dbQuery: database.New(db),
+		jwtSecret: jwt_secret,
 	}
 
 	app := application{

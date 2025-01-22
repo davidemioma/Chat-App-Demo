@@ -15,6 +15,7 @@ import (
 type config struct {
 	db *sql.DB
 	dbQuery *database.Queries
+	jwtSecret string
 }
 
 type application struct {
@@ -54,7 +55,11 @@ func (app *application) mount() http.Handler {
 		r.Get("/err", handlerErr)
 
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/signup", app.createUserHandler)
+			r.Post("/sign-up", app.registerHandler)
+
+			r.Post("/sign-in", app.loginHandler)
+
+			r.Get("/sign-out", app.logoutHandler)
 		})
 	})
 
