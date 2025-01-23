@@ -45,7 +45,7 @@ func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) 
 	userExists, existsErr := app.config.dbQuery.CheckUser(r.Context(), params.Email)
 
 	if existsErr == nil && userExists != (database.CheckUserRow{}) {
-		utils.RespondWithJSON(w, http.StatusOK, "Email already exists!")
+		utils.RespondWithError(w, http.StatusUnauthorized, "Email already exists!")
 		
 		return
 	}
@@ -166,7 +166,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithJSON(w, http.StatusOK, utils.JsonUser{
 		ID: userExists.ID.String(),
 		Email: userExists.Email,
-		Username: userExists.Email,
+		Username: userExists.Username,
 		CreatedAt: userExists.CreatedAt,
 		UpdatedAt: userExists.UpdatedAt,
 	})
