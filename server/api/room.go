@@ -66,8 +66,10 @@ func (app *application) createRoomHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Create Room
+	roomId := uuid.New().String()
+
 	roomErr := app.hub.CreateRoom(r.Context(), utils.CreateRoomReq{
-		ID: uuid.New().String(),
+		ID: roomId,
 		Name: params.Name,
 	})
 
@@ -79,7 +81,10 @@ func (app *application) createRoomHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusCreated, "New room created")
+	utils.RespondWithJSON(w, http.StatusCreated, utils.CreateRoomReq{
+		ID: roomId,
+		Name: params.Name,
+	})
 }
 
 func (app *application) joinRoomHandler(w http.ResponseWriter, r *http.Request) {
