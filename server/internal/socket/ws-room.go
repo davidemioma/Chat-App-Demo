@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"server/utils"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -72,12 +73,12 @@ func (h *Hub) CreateRoom(ctx context.Context, args utils.CreateRoomReq) error {
 	return nil
 }
 
-func (h *Hub) JoinRoom(w http.ResponseWriter, r *http.Request, arg utils.JoinRoomReq) error {
+func (h *Hub) JoinRoom(c *gin.Context, arg utils.JoinRoomReq) error {
 	h.Mutex.Lock()
 
 	defer h.Mutex.Unlock()
 
-	conn, wsErr := ws.Upgrade(w, r, nil)
+	conn, wsErr := ws.Upgrade(c.Writer, c.Request, nil)
 
 	if wsErr != nil {
 		return fmt.Errorf("web socket upgrade error: %v", wsErr)

@@ -2,8 +2,9 @@ package auth
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 var key = "chat_app_jwt_token"
@@ -29,18 +30,6 @@ func GetAuthToken (r *http.Request) (string, error){
 	return token, nil
 }
 
-func SetAuthToken(w http.ResponseWriter, token string) {
-	cookie := http.Cookie{
-		Name:     key,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true, // Prevents JavaScript access to the cookie
-		Secure:   false, // Set to true in production (HTTPS)
-		SameSite: http.SameSiteNoneMode,
-		MaxAge:   86400, // 24 hours
-	}
-
-	http.SetCookie(w, &cookie)
-
-	log.Println("Cookie set successfully")
+func SetAuthToken(c *gin.Context, token string) {
+	c.SetCookie(key, token, 86400, "/", "localhost", false, true)
 }

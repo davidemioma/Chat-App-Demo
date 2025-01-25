@@ -50,7 +50,7 @@ export default function SignIn() {
         toast.error("Something went wrong! could not login.");
       }
 
-      toast.success(`Login successfull. Hello ${res.data?.username}`);
+      toast.success(`Login successfull`);
 
       form.reset();
 

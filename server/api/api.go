@@ -8,9 +8,8 @@ import (
 	"server/internal/socket"
 	"time"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 type config struct {
@@ -25,57 +24,45 @@ type application struct {
 	hub     socket.Hub
 }
 
+var r *gin.Engine
+
 // Handle Routes
 func (app *application) mount() http.Handler {
-	r := chi.NewRouter()
-
-	// Middleware
-	r.Use(middleware.RequestID)
-	
-	r.Use(middleware.RealIP)
-
-	r.Use(middleware.Logger)
-
-	r.Use(middleware.Recoverer)
-
-	r.Use(middleware.Timeout(60 * time.Second))
+	r = gin.Default()
 
 	// Cors
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,  // Change this to true to allow cookies
-		MaxAge:           300,
+		MaxAge:           time.Hour * 12,
 	}))
 
 	// Routes
-	r.Route("/api", func(r chi.Router) {
-		r.Get("/health", handlerReadiness)
+	apiGroup := r.Group("/api")
+	{
+		apiGroup.GET("/health", handlerReadiness)
 
-		r.Get("/err", handlerErr)
+		apiGroup.GET("/err", handlerErr)
 
-		r.Route("/auth", func(r chi.Router) {
-			r.Post("/sign-up", app.registerHandler)
+		authGroup := apiGroup.Group("/auth")
+		{
+			authGroup.POST("/sign-up", app.registerHandler)
+			authGroup.POST("/sign-in", app.loginHandler)
+			authGroup.GET("/sign-out", app.logoutHandler)
+			authGroup.GET("/user", app.middlewareAuth(app.getCurrentUser))
+		}
 
-			r.Post("/sign-in", app.loginHandler)
-
-			r.Get("/sign-out", app.logoutHandler)
-
-			r.Get("/user", app.middlewareAuth(app.getCurrentUser))
-		})
-
-		r.Route("/rooms", func(r chi.Router) {
-			r.Get("/", app.getRoomHandler)
-
-			r.Post("/create", app.createRoomHandler)
-
-			r.Post("/{roomId}/join", app.joinRoomHandler)
-
-			r.Get("/{roomId}/clients", app.getClientsHandler)
-		})
-	})
+		roomsGroup := apiGroup.Group("/rooms")
+		{
+			roomsGroup.GET("/", app.getRoomHandler)
+			roomsGroup.POST("/create", app.createRoomHandler)
+			roomsGroup.POST("/:roomId/join", app.joinRoomHandler)
+			roomsGroup.GET("/:roomId/clients", app.getClientsHandler)
+		}
+	}
 
 	return r
 }

@@ -3,13 +3,15 @@ package main
 import (
 	"net/http"
 	"server/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+func handlerReadiness(c *gin.Context) { 
+	utils.RespondWithJSON(c, http.StatusOK, map[string]string{"status": "ok"}) 
 }
 
-func handlerErr(w http.ResponseWriter, r *http.Request) {
-	utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+func handlerErr(c *gin.Context) { 
+	utils.RespondWithError(c, http.StatusInternalServerError, "Internal Server Error") 
 }

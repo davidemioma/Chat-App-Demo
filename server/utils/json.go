@@ -4,27 +4,25 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-    dat, err := json.Marshal(payload)
+func RespondWithJSON(c *gin.Context, code int, payload interface{}) {
+    _, err := json.Marshal(payload)
 
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
 
-		w.WriteHeader(http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	w.WriteHeader(code)
-
-	w.Write(dat)
+	c.JSON(code, payload)
 }
 
-func RespondWithError(w http.ResponseWriter, code int, msg string) {
+func RespondWithError(c *gin.Context, code int, msg string) {
 	if code > 499 {
 		log.Printf("Responding with 5XX error: %s", msg)
 	}
@@ -33,7 +31,7 @@ func RespondWithError(w http.ResponseWriter, code int, msg string) {
 		Error string `json:"error"`
 	}
 	
-	RespondWithJSON(w, code, errorResponse{
+	RespondWithJSON(c, code, errorResponse{
 		Error: msg,
 	})
 }

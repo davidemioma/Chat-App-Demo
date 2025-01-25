@@ -7,9 +7,7 @@ import axiosInstance from "../axios";
 
 export const getCurrentUser = cache(async () => {
   try {
-    const res = await axiosInstance.get(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/auth/user`
-    );
+    const res = await axiosInstance.get("/auth/user");
 
     const result = (await res.data) as UserProps;
 

@@ -1,19 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"server/internal/auth"
 	"server/internal/database"
 	"server/utils"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/google/uuid"
 )
 
-func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) registerHandler(c *gin.Context) {
 	type parameters struct {
 		Email       string  `json:"email"`
 		Username    string  `json:"username"`
@@ -21,32 +22,28 @@ func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Validating body
-	decoder := json.NewDecoder(r.Body)
+	var params parameters
 
-	params := parameters{}
-
-	err := decoder.Decode(&params)
-
-	if err != nil {
+	if err := c.ShouldBindJSON(&params); err != nil {
 		app.logger.Printf("Error parsing JSON: %v", err)
 		
-		utils.RespondWithError(w, http.StatusBadRequest, "Error parsing JSON")
+		utils.RespondWithError(c, http.StatusBadRequest, "Error parsing JSON")
 
 		return
 	}
 
 	// Check if parameters is valid
 	if params.Email == "" || params.Username == "" || params.Password == "" {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Paramenters!")
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid Parameters!")
 
 		return
 	}
 
 	// Check if user already exists
-	userExists, existsErr := app.config.dbQuery.CheckUser(r.Context(), params.Email)
+	userExists, existsErr := app.config.dbQuery.CheckUser(c.Request.Context(), params.Email)
 
 	if existsErr == nil && userExists != (database.CheckUserRow{}) {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Email already exists!")
+		utils.RespondWithError(c, http.StatusUnauthorized, "Email already exists!")
 		
 		return
 	}
@@ -57,13 +54,13 @@ func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) 
 	if hashErr != nil{
 		app.logger.Printf("Error hashing password: %v", hashErr)
 
-		utils.RespondWithError(w, http.StatusInternalServerError, "Unable to encrypt password")
+		utils.RespondWithError(c, http.StatusInternalServerError, "Unable to encrypt password")
 		
 		return
 	}
 
 	// Create user
-	dbErr := app.config.dbQuery.CreateUser(r.Context(), database.CreateUserParams{
+	dbErr := app.config.dbQuery.CreateUser(c.Request.Context(), database.CreateUserParams{
 		ID: uuid.New(),
 		Email: params.Email,
 		Username: params.Username,
@@ -75,47 +72,45 @@ func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) 
 	if dbErr != nil {
 		app.logger.Printf("Couldn't create user: %v", dbErr)
 
-		utils.RespondWithError(w, http.StatusInternalServerError, "Couldn't create user")
+		utils.RespondWithError(c, http.StatusInternalServerError, "Couldn't create user")
 
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusCreated, "New user created")
+	utils.RespondWithJSON(c, http.StatusCreated, "New user created")
 }
 
-func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) loginHandler(c *gin.Context) {
 	type parameters struct {
 		Email       string  `json:"email"`
 		Password    string  `json:"password"`
 	}
 
 	// Validating body
-	decoder := json.NewDecoder(r.Body)
+	var params parameters
 
-	params := parameters{}
-
-	err := decoder.Decode(&params)
-
-	if err != nil {
+	if err := c.ShouldBindJSON(&params); err != nil {
 		app.logger.Printf("Error parsing JSON: %v", err)
 		
-		utils.RespondWithError(w, http.StatusBadRequest, "Error parsing JSON")
+		utils.RespondWithError(c, http.StatusBadRequest, "Error parsing JSON")
 
 		return
 	}
 
 	// Check if parameters is valid
 	if params.Email == "" || params.Password == "" {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Paramenters!")
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid Parameters!")
 
 		return
 	}
 
 	// Check if user exists
-	userExists, existsErr := app.config.dbQuery.GetUserByEmail(r.Context(), params.Email)
+	userExists, existsErr := app.config.dbQuery.GetUserByEmail(c.Request.Context(), params.Email)
 
 	if existsErr != nil || userExists == (database.User{}) {
-		utils.RespondWithError(w, http.StatusNotFound, "User not found!")
+		app.logger.Printf("User not found: %v", existsErr)
+
+		utils.RespondWithError(c, http.StatusNotFound, "User not found!")
 		
 		return
 	}
@@ -124,7 +119,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	passErr := utils.CheckPassword(params.Password, userExists.Hashedpassword)
 
 	if passErr != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Password does not match!")
+		utils.RespondWithError(c, http.StatusUnauthorized, "Password does not match!")
 		
 		return
 	}
@@ -133,7 +128,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, utils.MyJWTClaims{
 		ID: userExists.ID.String(),
 		Email: userExists.Email,
-		Username: userExists.Email,
+		Username: userExists.Username,
 		CreatedAt: userExists.CreatedAt,
 		UpdatedAt: userExists.UpdatedAt,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -145,32 +140,26 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	ss, signErr := token.SignedString([]byte(app.config.jwtSecret))
 
 	if signErr != nil {
-		app.logger.Printf("Unable to signed JWT token: %v", signErr)
+		app.logger.Printf("Unable to sign JWT token: %v", signErr)
 
-		utils.RespondWithError(w, http.StatusInternalServerError, "Something went wrong! try again.")
+		utils.RespondWithError(c, http.StatusInternalServerError, "Something went wrong! try again.")
 		
 		return
 	}
 
 	// Store token in http cookies
-	auth.SetAuthToken(w, ss)
+	auth.SetAuthToken(c, ss)
 	
-	utils.RespondWithJSON(w, http.StatusOK, utils.JsonUser{
-		ID: userExists.ID.String(),
-		Email: userExists.Email,
-		Username: userExists.Username,
-		CreatedAt: userExists.CreatedAt,
-		UpdatedAt: userExists.UpdatedAt,
-	})
+	utils.RespondWithJSON(c, http.StatusOK, "Login Successful")
 }
 
-func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) logoutHandler(c *gin.Context) {
 	// Clear the JWT token cookie
-	auth.SetAuthToken(w, "")
+	auth.SetAuthToken(c, "")
 
-	utils.RespondWithJSON(w, http.StatusOK, "Logged out successfully")
+	utils.RespondWithJSON(c, http.StatusOK, "Logged out successfully")
 }
 
-func (app *application) getCurrentUser(w http.ResponseWriter, r *http.Request, user utils.JsonUser) {
-	utils.RespondWithJSON(w, http.StatusOK, user)
+func (app *application) getCurrentUser(c *gin.Context, user utils.JsonUser) {
+	utils.RespondWithJSON(c, http.StatusOK, user)
 }

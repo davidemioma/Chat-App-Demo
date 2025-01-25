@@ -1,8 +1,7 @@
 "use server";
 
-import { UserProps } from "@/types";
-import axios, { AxiosError } from "axios";
-import { revalidatePath } from "next/cache";
+import { AxiosError } from "axios";
+import axiosInstance from "../axios";
 import { LoginValidator, LoginSchema } from "../validators/login";
 import { RegisterValidator, RegisterSchema } from "../validators/register";
 
@@ -14,14 +13,9 @@ export const loginHandler = async (values: LoginValidator) => {
       throw new Error("Invalid Parameters");
     }
 
-    const res = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/auth/sign-in`,
-      values
-    );
+    const res = await axiosInstance.post("/auth/sign-in", values);
 
-    const result = (await res.data) as UserProps | null;
-
-    revalidatePath("/");
+    const result = await res.data;
 
     return { status: res.status, data: result };
   } catch (err) {
@@ -49,10 +43,7 @@ export const registerHandler = async (values: RegisterValidator) => {
       throw new Error("Invalid Parameters");
     }
 
-    const res = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/auth/sign-up`,
-      values
-    );
+    const res = await axiosInstance.post("/auth/sign-up", values);
 
     const result = await res.data;
 

@@ -7,22 +7,23 @@ import (
 	"server/utils"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type AuthHandler func (http.ResponseWriter, *http.Request, utils.JsonUser)
+type AuthHandler func (*gin.Context, utils.JsonUser)
 
-func (app *application) middlewareAuth(handler AuthHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := auth.GetAuthToken(r)
+func (app *application) middlewareAuth(handler AuthHandler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString, err := auth.GetAuthToken(c.Request)
 
 		if err != nil {
-		    app.logger.Printf("Couldn't get token: %v", err)
+			app.logger.Printf("Couldn't get token: %v", err)
 
-		    utils.RespondWithError(w, http.StatusNotFound, "Couldn't get token")
+			utils.RespondWithError(c, http.StatusNotFound, "Couldn't get token")
 
-		    return
-	    }
+			return
+		}
 
 		// Verify Token
 		token, verifyErr := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -31,12 +32,12 @@ func (app *application) middlewareAuth(handler AuthHandler) http.HandlerFunc {
 			}
 
 			return []byte(app.config.jwtSecret), nil 
-	    })
+		})
 
 		if verifyErr != nil || !token.Valid {
 			app.logger.Printf("Couldn't validate token: %v", verifyErr)
 
-			utils.RespondWithError(w, http.StatusUnauthorized, "Couldn't validate token")
+			utils.RespondWithError(c, http.StatusUnauthorized, "Couldn't validate token")
 
 			return
 		}
@@ -46,8 +47,8 @@ func (app *application) middlewareAuth(handler AuthHandler) http.HandlerFunc {
 		if !ok {
 			app.logger.Printf("Invalid token claims")
 
-			utils.RespondWithError(w, http.StatusUnauthorized, "Invalid token claims")
-
+			utils.RespondWithError(c, http.StatusUnauthorized, "Invalid token claims")
+			
 			return
 		}
 
@@ -60,6 +61,6 @@ func (app *application) middlewareAuth(handler AuthHandler) http.HandlerFunc {
             UpdatedAt: claims["UpdatedAt"].(time.Time),
 		}
 
-		handler(w, r, user)
+		handler(c, user)
 	}
 }
