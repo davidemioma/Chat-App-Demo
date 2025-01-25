@@ -38,7 +38,6 @@ func SetAuthToken(w http.ResponseWriter, token string) {
 		Secure:   false, // Set to true in production (HTTPS)
 		SameSite: http.SameSiteNoneMode,
 		MaxAge:   86400, // 24 hours
-		Domain: "localhost",
 	}
 
 	http.SetCookie(w, &cookie)
