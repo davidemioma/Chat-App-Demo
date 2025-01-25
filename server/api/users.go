@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"server/internal/auth"
 	"server/internal/database"
 	"server/utils"
 	"time"
@@ -152,17 +153,8 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store token in http cookies
-	http.SetCookie(w, &http.Cookie{
-		Name:     "chat_app_jwt_token",
-		Value:    ss,
-		Path:     "/api",
-		HttpOnly: true,
-		Secure:   false, // false for development, but true in production.
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(time.Hour * 24 / time.Second), // 24 hours
-	})
+	auth.SetAuthToken(w, ss)
 	
-
 	utils.RespondWithJSON(w, http.StatusOK, utils.JsonUser{
 		ID: userExists.ID.String(),
 		Email: userExists.Email,
@@ -172,19 +164,13 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
-
 func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Clear the JWT token cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "chat_app_jwt_token",
-		Value:    "",
-		Path:     "/api",
-		HttpOnly: true,
-		Secure:   false, // Set to true if using HTTPS
-		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Unix(0, 0),
-	})
+	auth.SetAuthToken(w, "")
 
 	utils.RespondWithJSON(w, http.StatusOK, "Logged out successfully")
+}
+
+func (app *application) getCurrentUser(w http.ResponseWriter, r *http.Request, user utils.JsonUser) {
+	utils.RespondWithJSON(w, http.StatusOK, user)
 }

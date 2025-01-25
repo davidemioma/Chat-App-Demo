@@ -1,16 +1,16 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { BackBtn } from "../BackBtn";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginHandler } from "@/lib/actions/auth";
 import { useMutation } from "@tanstack/react-query";
+import { registerHandler } from "@/lib/actions/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginSchema, LoginValidator } from "@/lib/validators/login";
+import { RegisterSchema, RegisterValidator } from "@/lib/validators/register";
 import {
   Form,
   FormControl,
@@ -28,41 +28,42 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const LoginForm = () => {
+export default function SignUp() {
   const router = useRouter();
 
-  const form = useForm<LoginValidator>({
-    resolver: zodResolver(LoginSchema),
+  const form = useForm<RegisterValidator>({
+    resolver: zodResolver(RegisterSchema),
     defaultValues: {
+      username: "",
       email: "",
       password: "",
     },
   });
 
   const { mutate, isPending } = useMutation({
-    mutationKey: ["login"],
-    mutationFn: async (values: LoginValidator) => {
-      const result = await loginHandler(values);
+    mutationKey: ["register"],
+    mutationFn: async (values: RegisterValidator) => {
+      const result = await registerHandler(values);
 
       return result;
     },
     onSuccess: (res) => {
-      if (res.status !== 200) {
-        toast.error("Something went wrong! could not login.");
+      if (res.status !== 201) {
+        toast.error("Something went wrong! could not register user.");
       }
 
-      toast.success(`Login successfull. Hello ${res.data?.username}`);
+      toast.success(`Registration successfull`);
 
       form.reset();
 
-      router.push("/");
+      router.push("/auth/sign-in");
     },
     onError: (err) => {
       toast.error("Something went wrong! " + err.message);
     },
   });
 
-  const onSubmit = (values: LoginValidator) => {
+  const onSubmit = (values: RegisterValidator) => {
     mutate(values);
   };
 
@@ -70,14 +71,35 @@ const LoginForm = () => {
     <div className="w-full px-5 h-screen flex flex-col items-center justify-center p-5">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Welcome Back!</CardTitle>
+          <CardTitle>Welcome!</CardTitle>
 
-          <CardDescription>Sign In to your account.</CardDescription>
+          <CardDescription>Create an account.</CardDescription>
         </CardHeader>
 
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="john..."
+                        disabled={isPending}
+                        {...field}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="email"
@@ -121,18 +143,22 @@ const LoginForm = () => {
               />
 
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Loading..." : "Sign In"}
+                {isPending ? "Loading..." : "Sign Up"}
               </Button>
             </form>
           </Form>
         </CardContent>
 
-        <CardFooter>
-          <BackBtn label="Don't have an account?" href="/auth/sign-up" />
+        <CardFooter className="text-sm">
+          Already have an account?
+          <Link
+            className="text-blue-500 font-semibold ml-1"
+            href="/auth/sign-in"
+          >
+            Sign In
+          </Link>
         </CardFooter>
       </Card>
     </div>
   );
-};
-
-export default LoginForm;
+}

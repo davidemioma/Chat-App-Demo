@@ -42,11 +42,11 @@ func (app *application) mount() http.Handler {
 
 	// Cors
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
+		AllowCredentials: true,  // Change this to true to allow cookies
 		MaxAge:           300,
 	}))
 
@@ -62,6 +62,8 @@ func (app *application) mount() http.Handler {
 			r.Post("/sign-in", app.loginHandler)
 
 			r.Get("/sign-out", app.logoutHandler)
+
+			r.Get("/user", app.middlewareAuth(app.getCurrentUser))
 		})
 
 		r.Route("/rooms", func(r chi.Router) {
