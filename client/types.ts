@@ -5,3 +5,8 @@ export type UserProps = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type RoomProps = {
+  id: string;
+  name: string;
+};
