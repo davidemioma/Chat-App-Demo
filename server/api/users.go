@@ -150,7 +150,13 @@ func (app *application) loginHandler(c *gin.Context) {
 	// Store token in http cookies
 	auth.SetAuthToken(c, ss)
 	
-	utils.RespondWithJSON(c, http.StatusOK, "Login Successful")
+	utils.RespondWithJSON(c, http.StatusOK, utils.JsonUser{
+		ID: userExists.ID.String(),
+		Email: userExists.Email,
+		Username: userExists.Username,
+		CreatedAt: userExists.CreatedAt,
+		UpdatedAt: userExists.UpdatedAt,
+	})
 }
 
 func (app *application) logoutHandler(c *gin.Context) {

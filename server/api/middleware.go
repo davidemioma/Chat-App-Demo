@@ -15,7 +15,7 @@ type AuthHandler func (*gin.Context, utils.JsonUser)
 
 func (app *application) middlewareAuth(handler AuthHandler) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString, err := auth.GetAuthToken(c.Request)
+		tokenString, err := auth.GetAuthToken(c)
 
 		if err != nil {
 			app.logger.Printf("Couldn't get token: %v", err)
@@ -48,7 +48,7 @@ func (app *application) middlewareAuth(handler AuthHandler) gin.HandlerFunc {
 			app.logger.Printf("Invalid token claims")
 
 			utils.RespondWithError(c, http.StatusUnauthorized, "Invalid token claims")
-			
+
 			return
 		}
 

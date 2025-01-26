@@ -34,8 +34,8 @@ func (app *application) mount() http.Handler {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With", "X-Token"},
+		ExposeHeaders:    []string{"Content-Length", "Link", "Set-Cookie"},
 		AllowCredentials: true,  // Change this to true to allow cookies
 		MaxAge:           time.Hour * 12,
 	}))
@@ -50,16 +50,22 @@ func (app *application) mount() http.Handler {
 		authGroup := apiGroup.Group("/auth")
 		{
 			authGroup.POST("/sign-up", app.registerHandler)
+
 			authGroup.POST("/sign-in", app.loginHandler)
+
 			authGroup.GET("/sign-out", app.logoutHandler)
+
 			authGroup.GET("/user", app.middlewareAuth(app.getCurrentUser))
 		}
 
 		roomsGroup := apiGroup.Group("/rooms")
 		{
 			roomsGroup.GET("/", app.getRoomHandler)
+
 			roomsGroup.POST("/create", app.createRoomHandler)
+
 			roomsGroup.POST("/:roomId/join", app.joinRoomHandler)
+
 			roomsGroup.GET("/:roomId/clients", app.getClientsHandler)
 		}
 	}

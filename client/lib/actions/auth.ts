@@ -1,6 +1,7 @@
 "use server";
 
 import { AxiosError } from "axios";
+import { UserProps } from "@/types";
 import axiosInstance from "../axios";
 import { LoginValidator, LoginSchema } from "../validators/login";
 import { RegisterValidator, RegisterSchema } from "../validators/register";
@@ -15,7 +16,7 @@ export const loginHandler = async (values: LoginValidator) => {
 
     const res = await axiosInstance.post("/auth/sign-in", values);
 
-    const result = await res.data;
+    const result = (await res.data) as UserProps;
 
     return { status: res.status, data: result };
   } catch (err) {

@@ -9,9 +9,9 @@ import (
 
 var key = "chat_app_jwt_token"
 
-func GetAuthToken (r *http.Request) (string, error){
+func GetAuthToken (c *gin.Context) (string, error){
 	// Retrieve the JWT token from the cookie
-	cookie, err := r.Cookie(key)
+	cookie, err := c.Cookie(key)
 
 	if err != nil {
 		if err == http.ErrNoCookie {
@@ -21,15 +21,13 @@ func GetAuthToken (r *http.Request) (string, error){
         return "", fmt.Errorf("server cookie error: %v", err)
 	}
 
-	token := cookie.Value
-
-	if len(token) == 0 {
+	if len(cookie) == 0 {
 		return "", fmt.Errorf("cookie is empty")
 	}
 
-	return token, nil
+	return cookie, nil
 }
 
 func SetAuthToken(c *gin.Context, token string) {
-	c.SetCookie(key, token, 86400, "/", "localhost", false, true)
+	c.SetCookie(key, token, 86400, "/", "", false, true)
 }

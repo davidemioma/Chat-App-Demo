@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/data/auth";
+"use client";
 
-export default async function Home() {
-  const currentUser = await getCurrentUser();
+import { useContext } from "react";
+import { AuthContext } from "@/providers/auth-provider";
 
-  if (!currentUser || "error" in currentUser) {
-    return redirect("/auth/sign-in");
-  }
+export default function Home() {
+  const { user } = useContext(AuthContext);
 
-  return <div>Home {JSON.stringify(currentUser)}</div>;
+  return <div>Home {JSON.stringify(user)}</div>;
 }

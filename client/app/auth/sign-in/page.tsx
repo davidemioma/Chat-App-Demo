@@ -4,11 +4,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useContext, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { loginHandler } from "@/lib/actions/auth";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthContext } from "@/providers/auth-provider";
 import { LoginSchema, LoginValidator } from "@/lib/validators/login";
 import {
   Form,
@@ -29,6 +31,8 @@ import {
 
 export default function SignIn() {
   const router = useRouter();
+
+  const { authenticated } = useContext(AuthContext);
 
   const form = useForm<LoginValidator>({
     resolver: zodResolver(LoginSchema),
@@ -52,6 +56,8 @@ export default function SignIn() {
 
       toast.success(`Login successfull`);
 
+      localStorage.setItem("user_info", JSON.stringify(res.data));
+
       form.reset();
 
       router.push("/");
@@ -64,6 +70,12 @@ export default function SignIn() {
   const onSubmit = (values: LoginValidator) => {
     mutate(values);
   };
+
+  useEffect(() => {
+    if (authenticated) {
+      router.push("/");
+    }
+  }, [authenticated, router]);
 
   return (
     <div className="w-full px-5 h-screen flex flex-col items-center justify-center p-5">

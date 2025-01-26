@@ -5,11 +5,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useContext, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { registerHandler } from "@/lib/actions/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthContext } from "@/providers/auth-provider";
 import { RegisterSchema, RegisterValidator } from "@/lib/validators/register";
 import {
   Form,
@@ -30,6 +32,8 @@ import {
 
 export default function SignUp() {
   const router = useRouter();
+
+  const { authenticated } = useContext(AuthContext);
 
   const form = useForm<RegisterValidator>({
     resolver: zodResolver(RegisterSchema),
@@ -66,6 +70,12 @@ export default function SignUp() {
   const onSubmit = (values: RegisterValidator) => {
     mutate(values);
   };
+
+  useEffect(() => {
+    if (authenticated) {
+      router.push("/");
+    }
+  }, [authenticated, router]);
 
   return (
     <div className="w-full px-5 h-screen flex flex-col items-center justify-center p-5">
