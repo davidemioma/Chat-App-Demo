@@ -51,6 +51,7 @@ func (c *Client) readMessage(hub *Hub) {
 		msg := &Message{
 			Content:  string(m),
 			RoomID:   c.RoomID,
+			ClientID: c.ID,
 			Username: c.Username,
 		}
 

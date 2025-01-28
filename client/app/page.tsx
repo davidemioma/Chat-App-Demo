@@ -1,19 +1,23 @@
 "use client";
 
-import { useContext } from "react";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { getRooms } from "@/lib/data/rooms";
+import { useContext, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
 import CreateRoom from "@/components/forms/CreateRoom";
 import { AuthContext } from "@/providers/auth-provider";
 import { Card, CardContent } from "@/components/ui/card";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { WebsocketContext } from "@/providers/websccket-provider";
 
 export default function Home() {
   const router = useRouter();
 
   const { user } = useContext(AuthContext);
+
+  const { setConn } = useContext(WebsocketContext);
 
   const {
     data: rooms,
@@ -27,6 +31,53 @@ export default function Home() {
       return rooms;
     },
   });
+
+  const { mutate: joinRoom, isPending } = useMutation({
+    mutationKey: ["join-room"],
+    mutationFn: async ({
+      roomId,
+      userId,
+      username,
+    }: {
+      roomId: string;
+      userId: string;
+      username: string;
+    }) => {
+      const ws = new WebSocket(
+        `${process.env.NEXT_PUBLIC_BASE_SOCKET_URL}/rooms/${roomId}/join?userId=${userId}&username=${username}`
+      );
+
+      return new Promise((resolve, reject) => {
+        ws.onopen = () => {
+          setConn(ws);
+
+          resolve(roomId);
+        };
+
+        ws.onerror = (error) => {
+          console.log(`Websocket Error: ${error}`);
+
+          toast.error("Unable to join room! Websocket Error");
+
+          reject(new Error("WebSocket connection failed."));
+        };
+      });
+    },
+    onSuccess: (roomId) => {
+      toast.success(`Successfully Joined room.`);
+
+      router.push(`/rooms/${roomId}`);
+    },
+    onError: (err) => {
+      toast.error("Something went wrong! " + err.message);
+    },
+  });
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/auth/sign-in");
+    }
+  }, [user, router]);
 
   return (
     <div className="w-full max-w-5xl mx-auto min-h-screen flex flex-col gap-10 py-7 px-5">
@@ -68,7 +119,18 @@ export default function Home() {
                     <p className="text-sm text-muted-foreground">{room.name}</p>
                   </div>
 
-                  <Button>Join</Button>
+                  <Button
+                    onClick={() =>
+                      joinRoom({
+                        roomId: room.id,
+                        userId: user?.id as string,
+                        username: user?.username as string,
+                      })
+                    }
+                    disabled={isPending}
+                  >
+                    {isPending ? "Joining..." : "Join"}
+                  </Button>
                 </CardContent>
               </Card>
             ))}

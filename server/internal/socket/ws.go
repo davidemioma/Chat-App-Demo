@@ -1,7 +1,7 @@
 package socket
 
 import (
-	"sync"
+	"log"
 
 	"github.com/gorilla/websocket"
 )
@@ -9,6 +9,7 @@ import (
 type Message struct {
 	RoomID         string    `json:"roomId"`
 	Content        string    `json:"content"`
+	ClientID       string    `json:"clientId"`
     Username       string    `json:"username"`
 }
 
@@ -27,7 +28,6 @@ type Room struct {
 }
 
 type Hub struct {
-	Mutex      sync.RWMutex
 	Rooms      map[string] *Room
 	Register   chan *Client
 	Unregister chan *Client
@@ -80,13 +80,28 @@ func (h *Hub) Run() {
 				}	
 			}	
 
-	    case m := <-h.Broadcast:	
+	    case msg := <-h.Broadcast:	
 			// Check if room exists
-			if _, exists := h.Rooms[m.RoomID]; exists {
-				// Send message to all client
-				for _, cl := range h.Rooms[m.RoomID].Clients {
-					cl.Message <- m
+			if _, exists := h.Rooms[msg.RoomID]; exists {
+				// Log the broadcast message
+				log.Printf("Broadcasting message to room %s: %s", msg.RoomID, msg.Content)
+
+				// Send message to all clients
+				for _, cl := range h.Rooms[msg.RoomID].Clients {
+					select {
+					case cl.Message <- msg:
+						log.Printf("Message sent successfully")
+					default:
+						// If the client is not ready to receive, close the channel
+						log.Printf("Closing message channel for client %s in room %s", cl.ID, msg.RoomID)
+
+						close(cl.Message)
+
+						delete(h.Rooms[msg.RoomID].Clients, cl.ID)
+					}
 				}
+			} else {
+				log.Printf("Room %s does not exist for broadcasting", msg.RoomID)
 			}
 		}
 	}

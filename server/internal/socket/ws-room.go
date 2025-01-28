@@ -14,12 +14,10 @@ var ws = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		// origin := r.Header.Get("Origin")
+		origin := r.Header.Get("Origin")
 
 		// For production
-		// return origin == "Your frontend url"
-
-		return true
+		return origin == "http://localhost:3000"
 	},
 }
 
@@ -56,10 +54,6 @@ func (h *Hub) GetClients(roomId string) ([]utils.GetClientRes, error) {
 }
 
 func (h *Hub) CreateRoom(ctx context.Context, args utils.CreateRoomReq) error {
-	h.Mutex.Lock()
-
-	defer h.Mutex.Unlock()
-
 	if _, exists := h.Rooms[args.ID]; exists {
 		return fmt.Errorf("room with ID %s already exists", args.ID)
 	}
@@ -74,10 +68,6 @@ func (h *Hub) CreateRoom(ctx context.Context, args utils.CreateRoomReq) error {
 }
 
 func (h *Hub) JoinRoom(c *gin.Context, arg utils.JoinRoomReq) error {
-	h.Mutex.Lock()
-
-	defer h.Mutex.Unlock()
-
 	conn, wsErr := ws.Upgrade(c.Writer, c.Request, nil)
 
 	if wsErr != nil {
@@ -94,6 +84,7 @@ func (h *Hub) JoinRoom(c *gin.Context, arg utils.JoinRoomReq) error {
 
 	msg := &Message{
 		Content:  "A new user has joined the room",
+		ClientID: arg.UserID,
 		RoomID:   arg.RoomID,
 		Username: arg.Username,
 	}

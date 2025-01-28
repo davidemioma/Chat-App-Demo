@@ -84,24 +84,13 @@ func (app *application) joinRoomHandler(c *gin.Context) {
 	// Get the room Id from the URL params
 	roomId := c.Param("roomId")
 
-	// Get parameters
-	type parameters struct {
-		UserID   string `json:"userId"`
-		Username string `json:"username"`
-	}
+	// Get userId and username query params
+	userId := c.Query("userId")
 
-	// Validating body
-	var params parameters
-	if err := c.ShouldBindJSON(&params); err != nil {
-		app.logger.Printf("Error parsing JSON: %v", err)
-
-		utils.RespondWithError(c, http.StatusBadRequest, "Error parsing JSON")
-
-		return
-	}
+	username := c.Query("username") 
 
 	// Check if parameters is valid
-	if roomId == "" || params.UserID == "" || params.Username == "" {
+	if roomId == "" || userId == "" || username == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid Parameters!")
 		
 		return
@@ -110,8 +99,8 @@ func (app *application) joinRoomHandler(c *gin.Context) {
 	// Join Room
 	joinErr := app.hub.JoinRoom(c, utils.JoinRoomReq{
 		RoomID: roomId,
-		UserID: params.UserID,
-		Username: params.Username,
+		UserID: userId,
+		Username: username,
 	})
 
 	if joinErr != nil {

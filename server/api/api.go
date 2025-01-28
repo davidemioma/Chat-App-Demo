@@ -64,7 +64,7 @@ func (app *application) mount() http.Handler {
 
 			roomsGroup.POST("/create", app.createRoomHandler)
 
-			roomsGroup.POST("/:roomId/join", app.joinRoomHandler)
+			roomsGroup.GET("/:roomId/join", app.joinRoomHandler)
 
 			roomsGroup.GET("/:roomId/clients", app.getClientsHandler)
 		}

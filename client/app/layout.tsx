@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import QueryProvider from "@/providers/query-provider";
 import AuthContextProvider from "@/providers/auth-provider";
+import WebSocketProvider from "@/providers/websccket-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,9 @@ export default function RootLayout({
         <QueryProvider>
           <Toaster richColors position="top-center" />
 
-          <AuthContextProvider>{children}</AuthContextProvider>
+          <AuthContextProvider>
+            <WebSocketProvider>{children}</WebSocketProvider>
+          </AuthContextProvider>
         </QueryProvider>
       </body>
     </html>
