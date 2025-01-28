@@ -2,10 +2,10 @@
 
 import React, { useContext, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useParams, useRouter } from "next/navigation";
 import { AuthContext } from "@/providers/auth-provider";
 import { WebsocketContext } from "@/providers/websccket-provider";
 import { ChatValidator, ChatSchema } from "@/lib/validators/chat";
@@ -19,8 +19,6 @@ import {
 
 const ChatForm = () => {
   const router = useRouter();
-
-  const params = useParams();
 
   const { user } = useContext(AuthContext);
 
@@ -40,13 +38,7 @@ const ChatForm = () => {
       return;
     }
 
-    const message = {
-      roomId: params.roomId,
-      content: values.message,
-      username: user?.username,
-    };
-
-    await conn.send(JSON.stringify(message));
+    await conn.send(values.message);
 
     form.reset();
   };

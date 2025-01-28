@@ -89,6 +89,7 @@ func (h *Hub) Run() {
 				// Send message to all clients
 				for _, cl := range h.Rooms[msg.RoomID].Clients {
 					select {
+					// Send message to client channel
 					case cl.Message <- msg:
 						log.Printf("Message sent successfully")
 					default:

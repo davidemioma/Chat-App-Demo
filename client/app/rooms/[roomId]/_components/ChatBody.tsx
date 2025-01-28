@@ -58,12 +58,10 @@ const ChatBody = ({ roomId }: Props) => {
       return;
     }
 
-    if (!conn.onmessage) return;
-
-    conn.onmessage = (message: MessageEvent) => {
+    conn.onmessage = (message: MessageEvent<string>) => {
       const m: MessageProps = JSON.parse(message.data);
 
-      console.log(m);
+      console.log("Message Recieved: ", m);
 
       if (m.content === "A new user has joined the room") {
         setUsers((prev) => [
@@ -85,21 +83,24 @@ const ChatBody = ({ roomId }: Props) => {
         return;
       }
 
-      // Send regular messages
-      if (user.id === m.clientId) {
-        m.type = "sent";
-      } else {
-        m.type = "recieved";
-      }
-
-      setMessages((prev) => [...prev, m]);
+      // Handle regular messages
+      setMessages((prev) => [
+        ...prev,
+        { ...m, type: m.clientId === user.id ? "sent" : "recieved" },
+      ]);
     };
 
-    conn.onclose = () => {};
+    conn.onopen = () => {
+      console.log("WebSocket connection established.");
+    };
 
-    conn.onerror = () => {};
+    conn.onclose = () => {
+      console.log("Connection closed");
+    };
 
-    conn.onopen = () => {};
+    conn.onerror = (err) => {
+      console.log(`Connection err: ${err}`);
+    };
   }, [conn, router, user, users]);
 
   // if (messages.length === 0) {

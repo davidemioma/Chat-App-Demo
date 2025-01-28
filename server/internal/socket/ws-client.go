@@ -6,16 +6,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+
+
 func (c *Client) writeMessage() {
 	defer func ()  {
 		c.Conn.Close()
 	}()
 
 	for {
-		// Get message from channel
+		// Get message from client channel
 		message, ok := <-c.Message
 
 		if !ok {
+			log.Printf("Error getting message from channel")
+
 			return
 		}
 
@@ -25,6 +29,8 @@ func (c *Client) writeMessage() {
 			log.Printf("Error writing message for client %v: %v", c.Username, err)
 
 			c.Conn.Close()
+
+			return
 		}
 	}
 }
